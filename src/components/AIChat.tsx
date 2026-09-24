@@ -5,7 +5,27 @@ import { askGemini, GeminiError, getApiKey, hasApiKey, setApiKey } from '../lib/
 import { buildSystemPrompt, executeActions, snapshot } from '../lib/ai/executor'
 import type { Calendar, CalendarEvent } from '../types'
 import type { ChatTurn } from '../lib/ai/types'
-import { CloseIcon, SendIcon, SparkleIcon } from './Icons'
+import { CloseIcon, MicIcon, SendIcon, SparkleIcon } from './Icons'
+
+// Minimal shape of the Web Speech API (not in the standard TS DOM lib).
+type SpeechRecognitionLike = {
+  lang: string
+  continuous: boolean
+  interimResults: boolean
+  start: () => void
+  stop: () => void
+  onresult: ((e: { results: ArrayLike<ArrayLike<{ transcript: string }>> }) => void) | null
+  onend: (() => void) | null
+  onerror: ((e: { error: string }) => void) | null
+}
+function getSpeechCtor(): (new () => SpeechRecognitionLike) | null {
+  if (typeof window === 'undefined') return null
+  const w = window as unknown as {
+    SpeechRecognition?: new () => SpeechRecognitionLike
+    webkitSpeechRecognition?: new () => SpeechRecognitionLike
+  }
+  return w.SpeechRecognition ?? w.webkitSpeechRecognition ?? null
+}
 
 interface Msg {
   role: 'user' | 'assistant'
@@ -35,11 +55,21 @@ export default function AIChat() {
   const [loading, setLoading] = useState(false)
   const [needsKey, setNeedsKey] = useState(!hasApiKey())
   const [keyInput, setKeyInput] = useState(getApiKey())
+  const [listening, setListening] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
+  const recognitionRef = useRef<SpeechRecognitionLike | null>(null)
+  const speechSupported = getSpeechCtor() !== null
 
   useEffect(() => {
     if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight
   }, [messages, loading, open])
+
+  // Stop any active recording when the panel closes/unmounts.
+  useEffect(() => {
+    if (!open && recognitionRef.current) {
+      recognitionRef.current.stop()
+    }
+  }, [open])
 
   if (!open) return null
 
@@ -76,6 +106,37 @@ export default function AIChat() {
       setMessages((m) => [...m, { role: 'assistant', text: msg, isError: true }])
     } finally {
       setLoading(false)
+    }
+  }
+
+  const toggleMic = () => {
+    if (listening) {
+      recognitionRef.current?.stop()
+      return
+    }
+    const Ctor = getSpeechCtor()
+    if (!Ctor) return
+    const rec = new Ctor()
+    rec.lang = navigator.language || 'en-US'
+    rec.continuous = false
+    rec.interimResults = true
+    const base = input.trim()
+    rec.onresult = (e) => {
+      let transcript = ''
+      for (let i = 0; i < e.results.length; i++) transcript += e.results[i][0].transcript
+      setInput((base ? base + ' ' : '') + transcript)
+    }
+    rec.onerror = () => setListening(false)
+    rec.onend = () => {
+      setListening(false)
+      recognitionRef.current = null
+    }
+    recognitionRef.current = rec
+    setListening(true)
+    try {
+      rec.start()
+    } catch {
+      setListening(false)
     }
   }
 
@@ -190,9 +251,23 @@ export default function AIChat() {
                   }
                 }}
                 rows={1}
-                placeholder="Ask about or change your calendar…"
+                placeholder={listening ? 'Listening…' : 'Ask about or change your calendar…'}
                 className="flex-1 resize-none bg-surface-alt rounded-xl px-3 py-2 text-sm text-ink outline-none focus:ring-2 focus:ring-brand/40 max-h-28"
               />
+              {speechSupported && (
+                <button
+                  onClick={toggleMic}
+                  className={`h-9 w-9 shrink-0 rounded-xl flex items-center justify-center transition-colors ${
+                    listening
+                      ? 'bg-rose-500 text-white animate-pulse'
+                      : 'bg-surface-alt text-ink-muted hover:bg-surface-hover'
+                  }`}
+                  aria-label={listening ? 'Stop recording' : 'Voice input'}
+                  title="Voice input"
+                >
+                  <MicIcon width={18} height={18} />
+                </button>
+              )}
               <button
                 onClick={send}
                 disabled={loading || !input.trim()}

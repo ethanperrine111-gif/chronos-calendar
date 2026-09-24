@@ -153,3 +153,10 @@ export const SendIcon = (p: P) => (
     <path d="M22 2l-7 20-4-9-9-4 20-7z" />
   </svg>
 )
+export const MicIcon = (p: P) => (
+  <svg {...base(p)}>
+    <rect x="9" y="2" width="6" height="12" rx="3" />
+    <path d="M5 10a7 7 0 0 0 14 0" />
+    <path d="M12 19v3" />
+  </svg>
+)
