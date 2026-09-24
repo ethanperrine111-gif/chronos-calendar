@@ -13,6 +13,7 @@ import {
   MenuIcon,
   MoonIcon,
   SearchIcon,
+  SparkleIcon,
   SunIcon,
 } from './Icons'
 
@@ -36,6 +37,7 @@ export default function TopBar() {
   const searchQuery = useStore((s) => s.searchQuery)
   const setSearch = useStore((s) => s.setSearch)
   const openSettings = useUI((s) => s.openSettings)
+  const toggleAI = useUI((s) => s.toggleAI)
 
   const [viewMenuOpen, setViewMenuOpen] = useState(false)
   const [searchOpen, setSearchOpen] = useState(false)
@@ -135,6 +137,15 @@ export default function TopBar() {
           </button>
         )}
       </div>
+
+      <button
+        onClick={toggleAI}
+        className="p-2 rounded-full hover:bg-surface-hover text-brand"
+        aria-label="Calendar assistant"
+        title="Calendar assistant"
+      >
+        <SparkleIcon />
+      </button>
 
       <button
         onClick={toggleDark}

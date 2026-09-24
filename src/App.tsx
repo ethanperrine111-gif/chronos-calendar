@@ -12,6 +12,7 @@ import EventModal from './components/EventModal'
 import EventPopover from './components/EventPopover'
 import QuickAddModal from './components/QuickAddModal'
 import SettingsModal from './components/SettingsModal'
+import AIChat from './components/AIChat'
 import GridSkeleton from './components/GridSkeleton'
 import type { ViewType } from './types'
 
@@ -166,6 +167,7 @@ export default function App() {
       <EventModal />
       <QuickAddModal />
       <SettingsModal />
+      <AIChat />
     </div>
   )
 }

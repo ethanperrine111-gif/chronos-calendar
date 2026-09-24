@@ -141,3 +141,15 @@ export const PaletteIcon = (p: P) => (
     <circle cx="15.5" cy="10.5" r="1" fill="currentColor" />
   </svg>
 )
+export const SparkleIcon = (p: P) => (
+  <svg {...base(p)}>
+    <path d="M12 3l1.9 4.8L18.7 9l-4.8 1.9L12 15.7l-1.9-4.8L5.3 9l4.8-1.2L12 3z" />
+    <path d="M18.5 14.5l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8.8-2z" />
+  </svg>
+)
+export const SendIcon = (p: P) => (
+  <svg {...base(p)}>
+    <path d="M22 2L11 13" />
+    <path d="M22 2l-7 20-4-9-9-4 20-7z" />
+  </svg>
+)

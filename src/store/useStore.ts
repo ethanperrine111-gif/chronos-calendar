@@ -61,6 +61,9 @@ interface Store extends UIState {
   ) => void
   moveInstance: (inst: EventInstance, newStart: string, newEnd: string, scope?: EditScope) => void
 
+  /** Replace the whole dataset — used to undo an AI batch. */
+  restoreState: (events: CalendarEvent[], calendars: Calendar[]) => void
+
   // ---- derived ----
   instancesInRange: (start: Date, end: Date) => EventInstance[]
   colorForInstance: (inst: EventInstance) => string
@@ -417,6 +420,11 @@ export const useStore = create<Store>((set, get) => ({
           : e,
       ),
     })
+    persist(get)
+  },
+
+  restoreState: (events, calendars) => {
+    set({ events, calendars })
     persist(get)
   },
 

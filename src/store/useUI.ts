@@ -21,6 +21,7 @@ interface UIStore {
   popover: PopoverState | null
   quickAddOpen: boolean
   settingsOpen: boolean
+  aiOpen: boolean
 
   openNewEvent: (prefill?: Partial<CalendarEvent>) => void
   openEditEvent: (inst: EventInstance) => void
@@ -33,6 +34,8 @@ interface UIStore {
   closeQuickAdd: () => void
   openSettings: () => void
   closeSettings: () => void
+  toggleAI: () => void
+  closeAI: () => void
 }
 
 function skeleton(prefill?: Partial<CalendarEvent>): EventDraft {
@@ -71,6 +74,7 @@ export const useUI = create<UIStore>((set) => ({
   popover: null,
   quickAddOpen: false,
   settingsOpen: false,
+  aiOpen: false,
 
   openNewEvent: (prefill) =>
     set({
@@ -118,4 +122,6 @@ export const useUI = create<UIStore>((set) => ({
   closeQuickAdd: () => set({ quickAddOpen: false }),
   openSettings: () => set({ settingsOpen: true }),
   closeSettings: () => set({ settingsOpen: false }),
+  toggleAI: () => set((s) => ({ aiOpen: !s.aiOpen })),
+  closeAI: () => set({ aiOpen: false }),
 }))
