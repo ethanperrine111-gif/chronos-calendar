@@ -14,6 +14,8 @@ import QuickAddModal from './components/QuickAddModal'
 import SettingsModal from './components/SettingsModal'
 import AIChat from './components/AIChat'
 import GridSkeleton from './components/GridSkeleton'
+import { requestPersistentStorage } from './lib/storage'
+import { runUrlIntent } from './lib/urlIntent'
 import type { ViewType } from './types'
 
 function useMediaQuery(query: string): boolean {
@@ -48,7 +50,9 @@ export default function App() {
 
   const isMobile = useMediaQuery('(max-width: 767px)')
   const [booting, setBooting] = useState(true)
+  const [toast, setToast] = useState<string | null>(null)
   const didMobileSwitch = useRef(false)
+  const didIntent = useRef(false)
 
   // Apply theme class.
   useEffect(() => {
@@ -60,6 +64,28 @@ export default function App() {
     const t = setTimeout(() => setBooting(false), 350)
     return () => clearTimeout(t)
   }, [])
+
+  // Ask the browser to keep our storage (guards against Safari's ~7-day wipe),
+  // and handle any ?add= / ?ai= deep-link intent (e.g. from an iOS Shortcut).
+  useEffect(() => {
+    if (didIntent.current) return
+    didIntent.current = true
+    requestPersistentStorage()
+    let alive = true
+    runUrlIntent().then((res) => {
+      if (alive && res) setToast(res.toast)
+    })
+    return () => {
+      alive = false
+    }
+  }, [])
+
+  // Auto-dismiss the toast.
+  useEffect(() => {
+    if (!toast) return
+    const t = setTimeout(() => setToast(null), 3800)
+    return () => clearTimeout(t)
+  }, [toast])
 
   // On first load on a small screen, prefer a mobile-friendly view.
   useEffect(() => {
@@ -168,6 +194,14 @@ export default function App() {
       <QuickAddModal />
       <SettingsModal />
       <AIChat />
+
+      {toast && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[70] pop-in">
+          <div className="px-4 py-2.5 rounded-xl bg-ink text-surface text-sm font-medium shadow-2xl max-w-[90vw] truncate">
+            {toast}
+          </div>
+        </div>
+      )}
     </div>
   )
 }

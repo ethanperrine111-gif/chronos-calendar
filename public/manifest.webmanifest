@@ -1,0 +1,15 @@
+{
+  "name": "Chronos Calendar",
+  "short_name": "Chronos",
+  "description": "A full-featured personal calendar with an AI assistant.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#16161d",
+  "theme_color": "#5b5bd6",
+  "icons": [
+    { "src": "favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "maskable" }
+  ]
+}

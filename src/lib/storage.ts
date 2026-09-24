@@ -87,3 +87,44 @@ export function clearState(): void {
     /* ignore */
   }
 }
+
+/**
+ * Ask the browser to mark our storage as persistent so it is not evicted
+ * automatically (e.g. Safari's ~7-day clear of script-writable storage).
+ * Best-effort — resolves to whether persistence is granted.
+ */
+export async function requestPersistentStorage(): Promise<boolean> {
+  try {
+    if (navigator.storage?.persisted) {
+      if (await navigator.storage.persisted()) return true
+    }
+    if (navigator.storage?.persist) {
+      return await navigator.storage.persist()
+    }
+  } catch {
+    /* ignore */
+  }
+  return false
+}
+
+/** Serialize the whole dataset for a downloadable backup. */
+export function exportBackup(): string {
+  const raw = localStorage.getItem(STORAGE_KEY)
+  return raw ?? JSON.stringify({ version: SCHEMA_VERSION, calendars: [], events: [] })
+}
+
+/**
+ * Restore from a backup string (from exportBackup). Returns the migrated state
+ * on success, or null if the file is invalid — the caller reloads to apply it.
+ */
+export function importBackup(json: string): PersistedState | null {
+  try {
+    const parsed = JSON.parse(json) as Record<string, unknown>
+    const migrated = migrate(parsed)
+    if (!migrated) return null
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...migrated, version: SCHEMA_VERSION }))
+    return migrated
+  } catch {
+    return null
+  }
+}

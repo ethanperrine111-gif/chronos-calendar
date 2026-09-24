@@ -1,7 +1,8 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
+import { format } from 'date-fns'
 import { useStore } from '../store/useStore'
 import { useUI } from '../store/useUI'
-import { clearState } from '../lib/storage'
+import { clearState, exportBackup, importBackup } from '../lib/storage'
 import { CloseIcon } from './Icons'
 
 const SHORTCUTS: [string, string][] = [
@@ -22,6 +23,7 @@ export default function SettingsModal() {
   const toggleDark = useStore((s) => s.toggleDark)
   const weekendShading = useStore((s) => s.weekendShading)
   const toggleWeekendShading = useStore((s) => s.toggleWeekendShading)
+  const fileRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && close()
@@ -30,6 +32,30 @@ export default function SettingsModal() {
   }, [close])
 
   if (!open) return null
+
+  const doExport = () => {
+    const blob = new Blob([exportBackup()], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `chronos-backup-${format(new Date(), 'yyyy-MM-dd')}.json`
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
+  const doImport = (file: File) => {
+    const reader = new FileReader()
+    reader.onload = () => {
+      const ok = importBackup(String(reader.result))
+      if (ok) {
+        alert('Backup restored. Reloading…')
+        location.reload()
+      } else {
+        alert('That file could not be read as a Chronos backup.')
+      }
+    }
+    reader.readAsText(file)
+  }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={close}>
@@ -55,6 +81,41 @@ export default function SettingsModal() {
                   <kbd className="px-2 py-0.5 rounded border border-line bg-surface-alt text-xs text-ink">{key}</kbd>
                 </div>
               ))}
+            </div>
+          </div>
+
+          <div className="pt-2 border-t border-line">
+            <div className="text-xs font-semibold text-ink-muted uppercase tracking-wide mb-2">
+              Data &amp; backup
+            </div>
+            <p className="text-xs text-ink-faint mb-2">
+              Your calendar is saved in this browser. Export a backup file to keep it safe, or import
+              one to restore or move it to another device.
+            </p>
+            <div className="flex gap-2">
+              <button
+                onClick={doExport}
+                className="px-3 py-1.5 text-sm rounded-lg border border-line text-ink hover:bg-surface-hover"
+              >
+                Export backup
+              </button>
+              <button
+                onClick={() => fileRef.current?.click()}
+                className="px-3 py-1.5 text-sm rounded-lg border border-line text-ink hover:bg-surface-hover"
+              >
+                Import backup
+              </button>
+              <input
+                ref={fileRef}
+                type="file"
+                accept="application/json,.json"
+                className="hidden"
+                onChange={(e) => {
+                  const f = e.target.files?.[0]
+                  if (f) doImport(f)
+                  e.target.value = ''
+                }}
+              />
             </div>
           </div>
 
